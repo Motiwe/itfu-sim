@@ -497,7 +497,7 @@
 				img.onload = function() {
 					let vibrant = new Vibrant(
 				    img,
-				    64, /* amount of colors in initial palette from which the swatches will be generated, defaults to 64 */
+				    128, /* amount of colors in initial palette from which the swatches will be generated, defaults to 64 */
 				    5 /* quality. 0 is highest, but takes way more processing. defaults to 5. */
 					);
 					var swatches = vibrant.swatches()
@@ -520,6 +520,8 @@
 					colors = colors.sort(compareSwatches);
 					colors = colors.reverse();
 					console.log(colors);
+					totalPopulation = totalPopulation - colors[0].population;
+					colors.shift();
 					var i = 1;
 					colors.forEach(function(color) {
 					  console.log(color);
