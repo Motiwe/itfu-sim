@@ -59,11 +59,11 @@
 			var margin = 0.05;
 			var rigidBodies = [];
 			var clock = new THREE.Clock();
-			var pos = new THREE.Vector3();
-			var quat = new THREE.Quaternion();
 			var transformAux1 = new Ammo.btTransform();
 			var tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
 			var numObjectsToRemove = 0;
+			const maxNumberOfFruits = 80;
+			var numberOfFruits = 0;
 
 			if ( WEBGL.isWebGLAvailable() === false ) {
 
@@ -93,18 +93,6 @@
 				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 4000 );
 				camera.position.set( 0.0, 400, 400 * 3.5 );
 
-				//
-
-				var genCubeUrls = function ( prefix, postfix ) {
-
-					return [
-						prefix + 'px' + postfix, prefix + 'nx' + postfix,
-						prefix + 'py' + postfix, prefix + 'ny' + postfix,
-						prefix + 'pz' + postfix, prefix + 'nz' + postfix
-					];
-
-				};
-
 
 				var textureCube = new THREE.CubeTextureLoader()
 					.setPath( 'textures/cube/pisa/' )
@@ -113,74 +101,7 @@
 				scene = new THREE.Scene();
 				//scene.background = textureCube;
 
-				var hdrUrls = genCubeUrls( './textures/cube/pisaHDR/', '.hdr' );
-				var hdrCubeRenderTarget = null;
-
-				new THREE.HDRCubeTextureLoader().load( THREE.UnsignedByteType, hdrUrls, function ( hdrCubeMap ) {
-
-					var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
-					pmremGenerator.update( renderer );
-
-					var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
-					pmremCubeUVPacker.update( renderer );
-
-					hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
-
-					// Materials
-
-					var cubeWidth = 800;
-					var numberOfSphersPerSide = 8;
-					var sphereRadius = ( cubeWidth / numberOfSphersPerSide ) * 0.8 * 0.5;
-					var stepSize = 0.125;
-
-					var geometry = new THREE.SphereBufferGeometry( sphereRadius, 32, 16 );
-					var sphereShape = new Ammo.btSphereShape( sphereRadius );
-					var sphereMass = 35;
-					//var sphereBody = createRigidBody( geometry, sphereShape, sphereMass, pos, quat );
-
-					var index = 0;
-
-					for ( var alpha = 0; alpha <= 1.0; alpha += stepSize ) {
-
-						for ( var beta = 0; beta <= 1.0; beta += stepSize ) {
-
-							for ( var gamma = 0; gamma <= 1.0; gamma += stepSize ) {
-
-								var diffuseColor = new THREE.Color().setHSL( 0.125, 0.5, 0.25 );
-
-								var material = new THREE.MeshPhysicalMaterial( {
-									color: diffuseColor,
-									metalness: 0,
-									roughness: 0.5,
-									clearCoat: 1.0,
-									clearCoatRoughness: 1.0,
-									reflectivity: 1.0,
-									envMap: ( index % 2 ) == 1 ? hdrCubeRenderTarget.texture : null
-								} );
-
-								index ++;
-
-								var mesh = new THREE.Mesh( geometry, material );
-
-								mesh.position.x = alpha * 1000 - 400;
-								mesh.position.y = beta * 1000 - 400;
-								mesh.position.z = gamma * 1000 - 400;
-
-								var sphereBody = createRigidBody( mesh, sphereShape, sphereMass);
-
-							}
-							index ++;
-
-						}
-						index ++;
-
-					}
-
-					hdrCubeMap.dispose();
-					pmremGenerator.dispose();
-					pmremCubeUVPacker.dispose();
-
-				} );
+				spawnSphere();
 
 				function addLabel( name, location ) {
 
@@ -264,26 +185,29 @@
 							child.geometry.center();
 							child.geometry.rotateX( -90 * Math.PI / 180 );
 
+							var pos = new THREE.Vector3();
+							var quat = new THREE.Quaternion();
+
 							pos.copy(child.position);
 
-							var shape = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 1, 1000 ) );
+							var shape = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 10, 1000 ) );
 							pos.y = pos.y - 200;
 							createRigidBody( child, shape, 0, pos);
 
-							var shape1 = new Ammo.btBoxShape( new Ammo.btVector3( 1, 1000, 1000 ) );
+							var shape1 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
 							pos.x = pos.x - 550;
 							createRigidBody( child, shape1, 0, pos);
 
-							var shape2 = new Ammo.btBoxShape( new Ammo.btVector3( 1, 1000, 1000 ) );
+							var shape2 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
 							pos.x = pos.x + 1100;
 							createRigidBody( child, shape1, 0, pos);
 
-							var shape3 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 1000, 10 ) );
+							var shape3 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
 							pos.x = pos.x - 550;
 							pos.z = pos.z - 380;
 							createRigidBody( child, shape3, 0, pos);
 
-							var shape4 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 1000, 10 ) );
+							var shape4 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
 							pos.z = pos.z + 760;
 							createRigidBody( child, shape4, 0, pos);
 
@@ -364,13 +288,20 @@
 
 			}
 
-			function createRigidBody( object, physicsShape, mass, pos, quat, vel, angVel ) {
+			function createRigidBody( object, physicsShape, mass, param_pos, param_quat, vel, angVel ) {
 
-				if ( pos == null ) {
+				var pos = new THREE.Vector3();
+				var quat = new THREE.Quaternion();
+
+				if ( param_pos == null ) {
 					pos = object.position;
+				} else {
+					pos = param_pos;
 				}
-				if ( quat == null ) {
+				if ( param_quat == null ) {
 					quat = object.quaternion;
+				} else {
+					quat = param_quat;
 				}
 
 				var transform = new Ammo.btTransform();
@@ -528,6 +459,92 @@
 				}
 				numObjectsToRemove = 0;
 
+			}
+
+			function spawnSphere() {
+				var genCubeUrls = function ( prefix, postfix ) {
+
+					return [
+						prefix + 'px' + postfix, prefix + 'nx' + postfix,
+						prefix + 'py' + postfix, prefix + 'ny' + postfix,
+						prefix + 'pz' + postfix, prefix + 'nz' + postfix
+					];
+
+				};
+
+				var hdrUrls = genCubeUrls( './textures/cube/pisaHDR/', '.hdr' );
+				var hdrCubeRenderTarget = null;
+
+				new THREE.HDRCubeTextureLoader().load( THREE.UnsignedByteType, hdrUrls, function ( hdrCubeMap ) {
+
+					var pmremGenerator = new THREE.PMREMGenerator( hdrCubeMap );
+					pmremGenerator.update( renderer );
+
+					var pmremCubeUVPacker = new THREE.PMREMCubeUVPacker( pmremGenerator.cubeLods );
+					pmremCubeUVPacker.update( renderer );
+
+					hdrCubeRenderTarget = pmremCubeUVPacker.CubeUVRenderTarget;
+
+					// Materials
+
+					var cubeWidth = 800;
+					var numberOfSphersPerSide = 8;
+					var sphereRadius = ( cubeWidth / numberOfSphersPerSide ) * 1.4 * 0.5;
+					var stepSize = 0.125;
+
+					var geometry = new THREE.SphereBufferGeometry( sphereRadius, 32, 16 );
+					var sphereShape = new Ammo.btSphereShape( sphereRadius );
+					var sphereMass = 35;
+					//var sphereBody = createRigidBody( geometry, sphereShape, sphereMass, pos, quat );
+
+					var index = 0;
+
+					var diffuseColor = new THREE.Color().setHSL( 0.125, 0.5, 0.25 );
+
+					var material = new THREE.MeshPhysicalMaterial( {
+						color: diffuseColor,
+						metalness: 0,
+						roughness: 0.5,
+						clearCoat: 1.0,
+						clearCoatRoughness: 1.0,
+						reflectivity: 1.0,
+						envMap: ( index % 2 ) == 1 ? hdrCubeRenderTarget.texture : null
+					} );
+
+					var mesh = new THREE.Mesh( geometry, material );
+
+					mesh.position.x = getRandomInt(-500, 500);
+					mesh.position.y = 1000;
+					mesh.position.z = getRandomInt(-300, 300);
+
+					var sphereBody = createRigidBody(mesh, sphereShape, sphereMass);
+
+					hdrCubeMap.dispose();
+					pmremGenerator.dispose();
+					pmremCubeUVPacker.dispose();
+
+					numberOfFruits += 1;
+
+					if (numberOfFruits < maxNumberOfFruits) {
+						setTimeout(spawnSphere, 20);
+					} else {
+						setTimeout(function() {
+							rigidBodies.forEach(function(element) {
+							  scene.remove(element);
+								physicsWorld.removeRigidBody(element.userData.physicsBody);
+							});
+							numberOfFruits = 0;
+							spawnSphere();
+						}, 10000);
+					}
+
+				} );
+			}
+
+			function getRandomInt(min, max) {
+			  min = Math.ceil(min);
+			  max = Math.floor(max);
+			  return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
 			}
 
 		</script>
