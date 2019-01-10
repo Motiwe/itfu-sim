@@ -28,8 +28,8 @@
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Physical Material Variations by <a href="http://clara.io/" target="_blank" rel="noopener">Ben Houston</a>.<br/><br/>
-		Note: Every second sphere has an IBL environment map on it.</div>
+		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Inventory Tracking for Uncountables for Migros by <a href="http://mertyildiran.com/" target="_blank" rel="noopener">Mert Yıldıran</a>.<br/><br/>
+		Total number of fruits: <span id="number-fruits">0</span></div>
 
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/loaders/RGBELoader.js"></script>
@@ -101,6 +101,9 @@
 				scene = new THREE.Scene();
 				//scene.background = textureCube;
 
+				var axesHelper = new THREE.AxesHelper(200);
+				scene.add( axesHelper );
+
 				spawnSphere();
 
 				function addLabel( name, location ) {
@@ -122,14 +125,11 @@
 
 				}
 
-				addLabel( "+clearCoat", new THREE.Vector3( - 350, 0, 0 ) );
-				addLabel( "-clearCoat", new THREE.Vector3( 350, 0, 0 ) );
+				addLabel( "x-axis", new THREE.Vector3(250, 0, 0 ) );
 
-				addLabel( "+clearCoatRoughness", new THREE.Vector3( 0, - 300, 0 ) );
-				addLabel( "-clearCoatRoughness", new THREE.Vector3( 0, 300, 0 ) );
+				addLabel( "y-axis", new THREE.Vector3( 0, 250, 0 ) );
 
-				addLabel( "+reflectivity", new THREE.Vector3( 0, 0, - 300 ) );
-				addLabel( "-reflectivity", new THREE.Vector3( 0, 0, 300 ) );
+				addLabel( "z-axis", new THREE.Vector3( 0, 0, 250 ) );
 
 				particleLight = new THREE.Mesh( new THREE.SphereBufferGeometry( 4, 8, 8 ), new THREE.MeshBasicMaterial( { color: 0xffffff } ) );
 				scene.add( particleLight );
@@ -524,6 +524,7 @@
 					pmremCubeUVPacker.dispose();
 
 					numberOfFruits += 1;
+					document.getElementById("number-fruits").innerHTML = numberOfFruits;
 
 					if (numberOfFruits < maxNumberOfFruits) {
 						setTimeout(spawnSphere, 20);
@@ -534,6 +535,7 @@
 								physicsWorld.removeRigidBody(element.userData.physicsBody);
 							});
 							numberOfFruits = 0;
+							document.getElementById("number-fruits").innerHTML = numberOfFruits;
 							spawnSphere();
 						}, 10000);
 					}
