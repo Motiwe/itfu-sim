@@ -25,7 +25,6 @@
 		<link rel="stylesheet" type="text/css" href="main.css">
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/100/three.min.js"></script>
 		<script src="https://mamboleoo.be/learnThree/demos/OBJLoader.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/vibrant.js/1.0.0/Vibrant.min.js"></script>
 	</head>
 	<body>
 
@@ -71,6 +70,8 @@
 		<script src="js/ConvexObjectBreaker.js"></script>
 		<script src="js/QuickHull.js"></script>
 		<script src="js/geometries/ConvexGeometry.js"></script>
+
+		<script src="js/Vibrant.js"></script>
 
 		<script>
 
@@ -496,7 +497,7 @@
 				img.onload = function() {
 					let vibrant = new Vibrant(
 				    img,
-				    128, /* amount of colors in initial palette from which the swatches will be generated, defaults to 64 */
+				    64, /* amount of colors in initial palette from which the swatches will be generated, defaults to 64 */
 				    5 /* quality. 0 is highest, but takes way more processing. defaults to 5. */
 					);
 					var swatches = vibrant.swatches()
@@ -508,6 +509,7 @@
 							var item = {
 								titleTextColor: swatches[swatch].getTitleTextColor(),
 								hex: swatches[swatch].getHex(),
+								rgb: swatches[swatch].getRgb(),
 								population: swatches[swatch].getPopulation()
 							}
 							totalPopulation += swatches[swatch].getPopulation();
@@ -517,7 +519,7 @@
 					}
 					colors = colors.sort(compareSwatches);
 					colors = colors.reverse();
-					//console.log(colors);
+					console.log(colors);
 					var i = 1;
 					colors.forEach(function(color) {
 					  console.log(color);
