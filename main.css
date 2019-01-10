@@ -1,0 +1,33 @@
+.color-palette-item {
+  width: 0px;
+  height: 100px;
+  border: 1px solid #fff;
+  float: left;
+}
+
+.color-palette {
+  bottom: 0;
+  position: fixed;
+  z-index: 150;
+  opacity: 0.7;
+}
+
+/* unvisited link */
+a:link {
+  color: #fff;
+}
+
+/* visited link */
+a:visited {
+  color: #fff;
+}
+
+/* mouse over link */
+a:hover {
+  color: #fff;
+}
+
+/* selected link */
+a:active {
+  color: #fff;
+}
