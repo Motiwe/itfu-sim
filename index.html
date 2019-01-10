@@ -536,6 +536,7 @@
 							});
 							numberOfFruits = 0;
 							document.getElementById("number-fruits").innerHTML = numberOfFruits;
+							//takeScreenshot();
 							spawnSphere();
 						}, 10000);
 					}
@@ -547,6 +548,17 @@
 			  min = Math.ceil(min);
 			  max = Math.floor(max);
 			  return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+			}
+
+			function takeScreenshot() {
+		    var w = window.open('', '');
+		    w.document.title = "Screenshot";
+		    //w.document.body.style.backgroundColor = "red";
+		    var img = new Image();
+		    // Without 'preserveDrawingBuffer' set to true, we must render now
+		    renderer.render(scene, camera);
+		    img.src = renderer.domElement.toDataURL();
+		    w.document.body.appendChild(img);
 			}
 
 		</script>
