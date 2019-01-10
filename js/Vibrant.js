@@ -43,22 +43,22 @@ if (!pv) {
  * algorithm from the Leptonica library (http://www.leptonica.com/).
  * Returns a color map you can use to map original pixels to the reduced
  * palette. Still a work in progress.
- * 
+ *
  * @author Nick Rabinowitz
  * @example
- 
+
 // array of pixels as [R,G,B] arrays
 var myPixels = [[190,197,190], [202,204,200], [207,214,210], [211,214,211], [205,207,207]
                 // etc
                 ];
 var maxColors = 4;
- 
+
 var cmap = MMCQ.quantize(myPixels, maxColors);
 var newPalette = cmap.palette();
-var newPixels = myPixels.map(function(p) { 
-    return cmap.map(p); 
+var newPixels = myPixels.map(function(p) {
+    return cmap.map(p);
 });
- 
+
  */
 var MMCQ = (function() {
     // private constants
@@ -136,7 +136,7 @@ var MMCQ = (function() {
                 histo = vbox.histo;
             if (!vbox._count_set || force) {
                 var npix = 0,
-                    i, j, k;
+                    i, j, k, index;
                 for (i = vbox.r1; i <= vbox.r2; i++) {
                     for (j = vbox.g1; j <= vbox.g2; j++) {
                         for (k = vbox.b1; k <= vbox.b2; k++) {
@@ -628,34 +628,37 @@ module.exports = MMCQ.quantize
         quality = 5;
       }
       image = new CanvasImage(sourceImage);
-      imageData = image.getImageData();
-      pixels = imageData.data;
-      pixelCount = image.getPixelCount();
-      allPixels = [];
-      i = 0;
-      while (i < pixelCount) {
-        offset = i * 4;
-        r = pixels[offset + 0];
-        g = pixels[offset + 1];
-        b = pixels[offset + 2];
-        a = pixels[offset + 3];
-        if (a >= 125) {
-          if (!(r > 250 && g > 250 && b > 250)) {
-            allPixels.push([r, g, b]);
+      try {
+        imageData = image.getImageData();
+        pixels = imageData.data;
+        pixelCount = image.getPixelCount();
+        allPixels = [];
+        i = 0;
+        while (i < pixelCount) {
+          offset = i * 4;
+          r = pixels[offset + 0];
+          g = pixels[offset + 1];
+          b = pixels[offset + 2];
+          a = pixels[offset + 3];
+          if (a >= 125) {
+            if (!(r > 250 && g > 250 && b > 250)) {
+              allPixels.push([r, g, b]);
+            }
           }
+          i = i + quality;
         }
-        i = i + quality;
+        cmap = this.quantize(allPixels, colorCount);
+        this._swatches = cmap.vboxes.map((function(_this) {
+          return function(vbox) {
+            return new Swatch(vbox.color, vbox.vbox.count());
+          };
+        })(this));
+        this.maxPopulation = this.findMaxPopulation;
+        this.generateVarationColors();
+        this.generateEmptySwatches();
+      } finally {
+        image.removeCanvas();
       }
-      cmap = this.quantize(allPixels, colorCount);
-      this._swatches = cmap.vboxes.map((function(_this) {
-        return function(vbox) {
-          return new Swatch(vbox.color, vbox.vbox.count());
-        };
-      })(this));
-      this.maxPopulation = this.findMaxPopulation;
-      this.generateVarationColors();
-      this.generateEmptySwatches();
-      image.removeCanvas();
     }
 
     Vibrant.prototype.generateVarationColors = function() {
