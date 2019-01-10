@@ -60,6 +60,8 @@
 	  	<input class="range-slider" type="range" min="1" max="600" value="80" onchange="updateNumberOfFruitsSlider(this.value)">
 			<p>Fruit Size:</p>
 	  	<input class="range-slider" type="range" min="100" max="800" value="140" onchange="updateFruitSize(this.value)">
+			<!-- <p>Tilt:</p>
+	  	<input class="range-slider" type="range" min="0" max="180" value="90" onchange="updateTilt(this.value)"> -->
 		</div>
 
 		<script src="js/controls/OrbitControls.js"></script>
@@ -91,6 +93,7 @@
 			var physicsWorld;
 			var margin = 0.05;
 			var rigidBodies = [];
+			var rigidBodiesRelatedToFruitCrate = [];
 			var clock = new THREE.Clock();
 			var transformAux1 = new Ammo.btTransform();
 			var tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
@@ -99,6 +102,8 @@
 			var numberOfFruits = 0;
 			var fruitSizeMultiplier = 1.4;
 			var originalFruitSizeMultiplier = 1.4;
+			var fruitCrateMesh;
+			var fruitCrateMeshCurrentTilt = 90;
 
 			if ( WEBGL.isWebGLAvailable() === false ) {
 
@@ -227,28 +232,30 @@
 
 							var shape = new Ammo.btBoxShape( new Ammo.btVector3( 550, 10, 380 ) );
 							pos.y = pos.y - 200;
-							createRigidBody( child, shape, 0, pos);
+							createRigidBody( child, shape, 0, pos, true);
 
 							var shape1 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
 							pos.x = pos.x - 550;
-							createRigidBody( child, shape1, 0, pos);
+							createRigidBody( child, shape1, 0, pos, true);
 
 							var shape2 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
 							pos.x = pos.x + 1100;
-							createRigidBody( child, shape1, 0, pos);
+							createRigidBody( child, shape1, 0, pos, true);
 
 							var shape3 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
 							pos.x = pos.x - 550;
 							pos.z = pos.z - 380;
-							createRigidBody( child, shape3, 0, pos);
+							createRigidBody( child, shape3, 0, pos, true);
 
 							var shape4 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
 							pos.z = pos.z + 760;
-							createRigidBody( child, shape4, 0, pos);
+							createRigidBody( child, shape4, 0, pos, true);
+
+							fruitCrateMesh = child;
+							scene.add( child );
 
 						}
 						//object.rotateX( -45 * Math.PI / 180 );
-						//scene.add( object );
 					} );
 
 					},
@@ -323,7 +330,7 @@
 
 			}
 
-			function createRigidBody( object, physicsShape, mass, param_pos, param_quat, vel, angVel ) {
+			function createRigidBody( object, physicsShape, mass, param_pos, isFruitCrateRelated ) {
 
 				var pos = new THREE.Vector3();
 				var quat = new THREE.Quaternion();
@@ -333,11 +340,7 @@
 				} else {
 					pos = param_pos;
 				}
-				if ( param_quat == null ) {
-					quat = object.quaternion;
-				} else {
-					quat = param_quat;
-				}
+				quat = object.quaternion;
 
 				var transform = new Ammo.btTransform();
 				transform.setIdentity();
@@ -353,23 +356,20 @@
 
 				body.setFriction( 0.5 );
 
-				if ( vel ) {
-					body.setLinearVelocity( new Ammo.btVector3( vel.x, vel.y, vel.z ) );
-				}
-				if ( angVel ) {
-					body.setAngularVelocity( new Ammo.btVector3( angVel.x, angVel.y, angVel.z ) );
-				}
-
 				object.userData.physicsBody = body;
 				object.userData.collided = false;
 
-				scene.add( object );
+				//scene.add( object );
 
 				if ( mass > 0 ) {
 					rigidBodies.push( object );
 
 					// Disable deactivation
 					body.setActivationState( 4 );
+				}
+
+				if (isFruitCrateRelated) {
+					rigidBodiesRelatedToFruitCrate.push( body );
 				}
 
 				physicsWorld.addRigidBody( body );
@@ -462,6 +462,7 @@
 					mesh.position.z = getRandomInt(-300, 300);
 
 					var sphereBody = createRigidBody(mesh, sphereShape, sphereMass);
+					scene.add( mesh );
 
 					hdrCubeMap.dispose();
 					pmremGenerator.dispose();
@@ -528,12 +529,12 @@
 					}
 					colors = colors.sort(compareSwatches);
 					colors = colors.reverse();
-					console.log(colors);
+					//console.log(colors);
 					totalPopulation = totalPopulation - colors[0].population;
 					colors.shift();
 					var i = 1;
 					colors.forEach(function(color) {
-					  console.log(color);
+					  //console.log(color);
 						document.getElementById("color" + i).style.backgroundColor = color.hex;
 						document.getElementById("color" + i).style.width = (color.population / totalPopulation * 500) + 'px';
 						document.getElementById("p-color" + i).innerHTML = (color.population / totalPopulation * 100).toFixed(1) + '%';
@@ -563,6 +564,16 @@
 			}
 			function updateFruitSize(slideValue) {
 				fruitSizeMultiplier = slideValue / 140;
+			}
+			function updateTilt(slideValue) {
+				fruitCrateMesh.rotateZ( 1 * (slideValue - fruitCrateMeshCurrentTilt) * Math.PI / 180 );
+				console.log("Rotate");
+				console.log(fruitCrateMesh);
+				rigidBodiesRelatedToFruitCrate.forEach(function(element) {
+					console.log(element);
+					//element.rotateZ( 1 * (slideValue - fruitCrateMeshCurrentTilt) * Math.PI / 180 );
+				});
+				fruitCrateMeshCurrentTilt = slideValue;
 			}
 
 		</script>
