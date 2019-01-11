@@ -29,7 +29,7 @@
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Inventory Tracking for Uncountables Simulation for Migros by <a href="http://mertyildiran.com/" target="_blank" rel="noopener">Mert Yıldıran</a>.<br/><br/>
+		<div id="info"><a href="http://threejs.org" target="_blank" rel="noopener">three.js</a> - Inventory Tracking for Uncountables Simulation - Created for Migros by <a href="http://mertyildiran.com/" target="_blank" rel="noopener">Mert Yıldıran</a>.<br/><br/>
 		Total number of fruits: <span id="number-fruits">0</span></div>
 
 		<div id="colors" class="color-palette">
@@ -57,11 +57,15 @@
 
 		<div class="settings-container">
 			<p>Number of fruits:</p>
-	  	<input class="range-slider" type="range" min="1" max="600" value="80" onchange="updateNumberOfFruitsSlider(this.value)">
+	  	<input class="range-slider" type="range" min="1" max="400" value="80" onchange="updateNumberOfFruitsSlider(this.value)">
 			<p>Fruit Size:</p>
-	  	<input class="range-slider" type="range" min="100" max="800" value="140" onchange="updateFruitSize(this.value)">
+	  	<input class="range-slider" type="range" min="100" max="400" value="140" onchange="updateFruitSize(this.value)">
 			<p>Tilt:</p>
 	  	<input class="range-slider" type="range" min="0" max="180" value="90" onchange="updateTilt(this.value)">
+		</div>
+
+		<div id="copyright">
+			&copy; Motiwe 2019 - <a href="http://motiwe.com/" target="_blank" rel="noopener">motiwe.com</a>
 		</div>
 
 		<script src="js/controls/OrbitControls.js"></script>
@@ -540,7 +544,8 @@
 					colors.forEach(function(color) {
 					  //console.log(color);
 						document.getElementById("color" + i).style.backgroundColor = color.hex;
-						document.getElementById("color" + i).style.width = (color.population / totalPopulation * 500) + 'px';
+						document.getElementById("color" + i).style.width = (color.population / totalPopulation * 30) + 'vw';
+						document.getElementById("color" + i).style.visibility = 'visible';
 						document.getElementById("p-color" + i).innerHTML = (color.population / totalPopulation * 100).toFixed(1) + '%';
 						document.getElementById("p-hex" + i).innerHTML = color.hex;
 						i += 1;

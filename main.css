@@ -1,8 +1,14 @@
 .color-palette-item {
   width: 0px;
-  height: 100px;
+  height: 40px;
   border: 1px solid #fff;
   float: left;
+  visibility: hidden;
+}
+
+.color-palette-item > p {
+  margin-block-start: 0.2em;
+  margin-block-end: 0.2em;
 }
 
 .color-palette {
@@ -22,7 +28,7 @@
 }
 
 .range-slider {
-  width: 200px;
+  width: 18vw;
   z-index: 150;
 }
 
@@ -44,4 +50,11 @@ a:hover {
 /* selected link */
 a:active {
   color: #fff;
+}
+
+#copyright {
+  position: absolute;
+  bottom: 0px;
+  width: 100%;
+  padding: 5px;
 }
