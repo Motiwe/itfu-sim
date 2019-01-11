@@ -60,8 +60,8 @@
 	  	<input class="range-slider" type="range" min="1" max="600" value="80" onchange="updateNumberOfFruitsSlider(this.value)">
 			<p>Fruit Size:</p>
 	  	<input class="range-slider" type="range" min="100" max="800" value="140" onchange="updateFruitSize(this.value)">
-			<!-- <p>Tilt:</p>
-	  	<input class="range-slider" type="range" min="0" max="180" value="90" onchange="updateTilt(this.value)"> -->
+			<p>Tilt:</p>
+	  	<input class="range-slider" type="range" min="0" max="180" value="90" onchange="updateTilt(this.value)">
 		</div>
 
 		<script src="js/controls/OrbitControls.js"></script>
@@ -229,30 +229,39 @@
 							var quat = new THREE.Quaternion();
 
 							pos.copy(child.position);
+							quat.copy(child.quaternion);
+							console.log(pos);
+							console.log(quat);
 
-							var shape = new Ammo.btBoxShape( new Ammo.btVector3( 550, 10, 380 ) );
-							pos.y = pos.y - 200;
-							createRigidBody( child, shape, 0, pos, true);
+							var shape = new Ammo.btCompoundShape();
 
-							var shape1 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
-							pos.x = pos.x - 550;
-							createRigidBody( child, shape1, 0, pos, true);
+							var transform = new Ammo.btTransform();
+							transform.setIdentity();
+							transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+
+							var shape1 = new Ammo.btBoxShape( new Ammo.btVector3( 550, 10, 380 ) );
+							transform.setOrigin( new Ammo.btVector3( 0, -200, 0 ) );
+							shape.addChildShape(transform, shape1);
 
 							var shape2 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
-							pos.x = pos.x + 1100;
-							createRigidBody( child, shape1, 0, pos, true);
+							transform.setOrigin( new Ammo.btVector3( -550, -200, 0 ) );
+							shape.addChildShape(transform, shape2);
 
-							var shape3 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
-							pos.x = pos.x - 550;
-							pos.z = pos.z - 380;
-							createRigidBody( child, shape3, 0, pos, true);
+							var shape3 = new Ammo.btBoxShape( new Ammo.btVector3( 10, 400, 1000 ) );
+							transform.setOrigin( new Ammo.btVector3( 550, -200, 0 ) );
+							shape.addChildShape(transform, shape3);
 
 							var shape4 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
-							pos.z = pos.z + 760;
-							createRigidBody( child, shape4, 0, pos, true);
+							transform.setOrigin( new Ammo.btVector3( 0, -200, -380 ) );
+							shape.addChildShape(transform, shape4);
+
+							var shape5 = new Ammo.btBoxShape( new Ammo.btVector3( 1000, 400, 10 ) );
+							transform.setOrigin( new Ammo.btVector3( 0, -200, 380 ) );
+							shape.addChildShape(transform, shape5);
+
+							createRigidBody( child, shape, 0);
 
 							fruitCrateMesh = child;
-							scene.add( child );
 
 						}
 						//object.rotateX( -45 * Math.PI / 180 );
@@ -330,7 +339,7 @@
 
 			}
 
-			function createRigidBody( object, physicsShape, mass, param_pos, isFruitCrateRelated ) {
+			function createRigidBody( object, physicsShape, mass, param_pos ) {
 
 				var pos = new THREE.Vector3();
 				var quat = new THREE.Quaternion();
@@ -359,17 +368,13 @@
 				object.userData.physicsBody = body;
 				object.userData.collided = false;
 
-				//scene.add( object );
+				scene.add( object );
 
 				if ( mass > 0 ) {
 					rigidBodies.push( object );
 
 					// Disable deactivation
 					body.setActivationState( 4 );
-				}
-
-				if (isFruitCrateRelated) {
-					rigidBodiesRelatedToFruitCrate.push( body );
 				}
 
 				physicsWorld.addRigidBody( body );
@@ -457,12 +462,11 @@
 
 					var mesh = new THREE.Mesh( geometry, material );
 
-					mesh.position.x = getRandomInt(-500, 500);
+					mesh.position.x = getRandomInt(-300, 300);
 					mesh.position.y = 1000;
 					mesh.position.z = getRandomInt(-300, 300);
 
 					var sphereBody = createRigidBody(mesh, sphereShape, sphereMass);
-					scene.add( mesh );
 
 					hdrCubeMap.dispose();
 					pmremGenerator.dispose();
@@ -568,11 +572,21 @@
 			function updateTilt(slideValue) {
 				fruitCrateMesh.rotateZ( 1 * (slideValue - fruitCrateMeshCurrentTilt) * Math.PI / 180 );
 				console.log("Rotate");
-				console.log(fruitCrateMesh);
-				rigidBodiesRelatedToFruitCrate.forEach(function(element) {
-					console.log(element);
-					//element.rotateZ( 1 * (slideValue - fruitCrateMeshCurrentTilt) * Math.PI / 180 );
-				});
+
+				var pos = new THREE.Vector3();
+				var quat = new THREE.Quaternion();
+
+				pos.copy(fruitCrateMesh.position);
+				quat.copy(fruitCrateMesh.quaternion);
+				console.log(pos);
+				console.log(quat);
+
+				var transform = new Ammo.btTransform();
+				transform.setIdentity();
+				transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+				transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+				fruitCrateMesh.userData.physicsBody.setCenterOfMassTransform(transform);
+
 				fruitCrateMeshCurrentTilt = slideValue;
 			}
 
