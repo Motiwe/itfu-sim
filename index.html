@@ -85,6 +85,7 @@
 		<script src="js/geometries/ConvexGeometry.js"></script>
 
 		<script src="js/Vibrant.js"></script>
+		<script src="js/colorgram.js"></script>
 
 		<script>
 
@@ -234,8 +235,6 @@
 
 							pos.copy(child.position);
 							quat.copy(child.quaternion);
-							console.log(pos);
-							console.log(quat);
 
 							var shape = new Ammo.btCompoundShape();
 
@@ -513,41 +512,28 @@
 		    img.src = renderer.domElement.toDataURL();
 
 				img.onload = function() {
-					let vibrant = new Vibrant(
-				    img,
-				    128, /* amount of colors in initial palette from which the swatches will be generated, defaults to 64 */
-				    5 /* quality. 0 is highest, but takes way more processing. defaults to 5. */
-					);
-					var swatches = vibrant.swatches()
-					//console.log(swatches);
-					var colors = [];
-					var totalPopulation = 0;
-			    for (var swatch in swatches) {
-		        if (swatches.hasOwnProperty(swatch) && swatches[swatch]) {
-							var item = {
-								titleTextColor: swatches[swatch].getTitleTextColor(),
-								hex: swatches[swatch].getHex(),
-								rgb: swatches[swatch].getRgb(),
-								population: swatches[swatch].getPopulation()
-							}
-							totalPopulation += swatches[swatch].getPopulation();
-							colors.push(item);
-							//console.log(swatches[swatch]);
-						}
-					}
-					colors = colors.sort(compareSwatches);
-					colors = colors.reverse();
-					//console.log(colors);
-					totalPopulation = totalPopulation - colors[0].population;
-					colors.shift();
+
+					var canvas = document.createElement('canvas');
+					canvas.width = img.width;
+					canvas.height = img.height;
+					var ctx = canvas.getContext('2d');
+					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+					var id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+					var palette = Colorgram.extract({width: canvas.width, height: canvas.height, data: id.data, channels: 4, canvas: canvas}, 3);
+
+					var backgroundColor = palette.shift();
+					var divider = 1.0 - backgroundColor[3];
+
 					var i = 1;
-					colors.forEach(function(color) {
-					  //console.log(color);
-						document.getElementById("color" + i).style.backgroundColor = color.hex;
-						document.getElementById("color" + i).style.width = (color.population / totalPopulation * 30) + 'vw';
+					palette.forEach(function(color) {
+					  console.log(color);
+						var hex = rgbToHex( color[0], color[1], color[2] );
+						var rate = color[3] / divider;
+						document.getElementById("color" + i).style.backgroundColor = hex;
+						document.getElementById("color" + i).style.width = (rate * 30) + 'vw';
 						document.getElementById("color" + i).style.visibility = 'visible';
-						document.getElementById("p-color" + i).innerHTML = (color.population / totalPopulation * 100).toFixed(1) + '%';
-						document.getElementById("p-hex" + i).innerHTML = color.hex;
+						document.getElementById("p-color" + i).innerHTML = (rate * 100).toFixed(1) + '%';
+						document.getElementById("p-hex" + i).innerHTML = hex;
 						i += 1;
 					});
 				};
@@ -561,6 +547,15 @@
 					comparison = -1;
 				}
 				return comparison;
+			}
+
+			function componentToHex(c) {
+		    var hex = c.toString(16);
+		    return hex.length == 1 ? "0" + hex : hex;
+			}
+
+			function rgbToHex(r, g, b) {
+		    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 			}
 			//var a = document.createElement('a');
 			//a.href = img.src.replace("image/png", "image/octet-stream");
@@ -583,8 +578,6 @@
 
 				pos.copy(fruitCrateMesh.position);
 				quat.copy(fruitCrateMesh.quaternion);
-				console.log(pos);
-				console.log(quat);
 
 				var transform = new Ammo.btTransform();
 				transform.setIdentity();

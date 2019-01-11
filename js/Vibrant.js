@@ -479,7 +479,17 @@ var MMCQ = (function() {
         while (pq2.size()) {
             cmap.push(pq2.pop());
         }
-
+        var colorPaletteDiv = $('#color-palette');
+        colorPaletteDiv.empty();
+        cmap.palette().forEach(function(paletteColor) {
+          if ( JSON.stringify(paletteColor) != JSON.stringify([4, 4, 4]) && JSON.stringify(paletteColor) != JSON.stringify([8, 4, 4]) ) {
+            console.log(paletteColor);
+            var paletteColorDiv = $("<div>");
+            paletteColorDiv.css("background-color", "rgb(" + paletteColor[0] + "," + paletteColor[1] + "," + paletteColor[2] + ")");
+            paletteColorDiv.css("width", "0.8vw");
+            colorPaletteDiv.append(paletteColorDiv);
+          }
+        });
         return cmap;
     }
 
