@@ -63,7 +63,7 @@
 			<p>Number of fruits:</p>
 	  	<input class="range-slider" type="range" min="1" max="400" value="80" onchange="updateNumberOfFruitsSlider(this.value)">
 			<p>Fruit Size:</p>
-	  	<input class="range-slider" type="range" min="100" max="400" value="140" onchange="updateFruitSize(this.value)">
+	  	<input class="range-slider" type="range" min="70" max="285" value="100" onchange="updateFruitSize(this.value)">
 			<p>Tilt:</p>
 	  	<input class="range-slider" type="range" min="0" max="180" value="90" onchange="updateTilt(this.value)">
 		</div>
@@ -109,13 +109,19 @@
 			var tempBtVec3_1 = new Ammo.btVector3( 0, 0, 0 );
 			var numObjectsToRemove = 0;
 			var maxNumberOfFruits = 80;
+			var maxNumberOfFruitsChosen = 80;
+			var maxNumberOfFruitsOnFullState = 120;
 			var numberOfFruits = 0;
-			var fruitSizeMultiplier = 1.4;
-			var originalFruitSizeMultiplier = 1.4;
+			var fruitSizeMultiplier = 1.0;
+			var fruitSizeMultiplierOriginal = 1.0;
+			var totalProduct = fruitSizeMultiplierOriginal * maxNumberOfFruitsOnFullState;
 			var fruitCrateMesh;
 			var fruitCrateMeshCurrentTilt = 90;
 			var fruitCrateColor = [197, 197, 197];
 			var previousPrediction = null;
+			var rateOnFullState = null;
+			var screenshotLock = false;
+			var stopSpawning = false;
 
 			if ( WEBGL.isWebGLAvailable() === false ) {
 
@@ -422,8 +428,19 @@
 
 			function spawnSphere() {
 				if (document.hidden == true) {
-					setTimeout(spawnSphere, 20 * fruitSizeMultiplier / originalFruitSizeMultiplier);
+					setTimeout(spawnSphere, 20 * ((fruitSizeMultiplier / fruitSizeMultiplierOriginal) ** 3));
 					return;
+				}
+
+				if (stopSpawning) {
+					stopSpawning = false;
+					return;
+				}
+
+				if (rateOnFullState == null) {
+					maxNumberOfFruits = maxNumberOfFruitsOnFullState;
+				} else {
+					maxNumberOfFruits = maxNumberOfFruitsChosen;
 				}
 
 				var genCubeUrls = function ( prefix, postfix ) {
@@ -455,8 +472,7 @@
 					var numberOfSphersPerSide = 8;
 					var fruitSizeMultiplierUpper = fruitSizeMultiplier + 0.2;
 					var fruitSizeMultiplierLower = fruitSizeMultiplier - 0.2;
-					var sphereRadius = 50 * (Math.random() * (fruitSizeMultiplierLower - fruitSizeMultiplierUpper) + fruitSizeMultiplierUpper);
-					console.log(sphereRadius);
+					var sphereRadius = 50 * 1.4 * (Math.random() * (fruitSizeMultiplierLower - fruitSizeMultiplierUpper) + fruitSizeMultiplierUpper);
 					var stepSize = 0.125;
 
 					var geometry = new THREE.SphereBufferGeometry( sphereRadius, 32, 16 );
@@ -487,6 +503,10 @@
 					mesh.position.y = 1000;
 					mesh.position.z = getRandomInt(-300, 300);
 
+					if (stopSpawning) {
+						stopSpawning = false;
+						return;
+					}
 					var sphereBody = createRigidBody(mesh, sphereShape, sphereMass);
 
 					hdrCubeMap.dispose();
@@ -497,24 +517,31 @@
 					document.getElementById("number-fruits").innerHTML = numberOfFruits;
 
 					if (numberOfFruits < maxNumberOfFruits) {
-						setTimeout(spawnSphere, 20 * fruitSizeMultiplier / originalFruitSizeMultiplier);
+						setTimeout(spawnSphere, 20 * ((fruitSizeMultiplier / fruitSizeMultiplierOriginal) ** 3));
 					} else {
+						screenshotLock = false;
+
 						setTimeout(function() {
 							takeScreenshot();
 						}, 3000);
 
 						setTimeout(function() {
-							rigidBodies.forEach(function(element) {
-								scene.remove(element);
-								physicsWorld.removeRigidBody(element.userData.physicsBody);
-							});
-							numberOfFruits = 0;
-							document.getElementById("number-fruits").innerHTML = numberOfFruits;
-							spawnSphere();
-						}, 10000);
+							clearFruits();
+						}, 9000);
 					}
 
 				} );
+			}
+
+			function clearFruits() {
+				screenshotLock = true;
+				rigidBodies.forEach(function(element) {
+					scene.remove(element);
+					physicsWorld.removeRigidBody(element.userData.physicsBody);
+				});
+				numberOfFruits = 0;
+				document.getElementById("number-fruits").innerHTML = numberOfFruits;
+				setTimeout(spawnSphere, 1000);
 			}
 
 			function getRandomInt(min, max) {
@@ -537,7 +564,7 @@
 					var ctx = canvas.getContext('2d');
 					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 					var id = ctx.getImageData(0, 0, canvas.width, canvas.height);
-					var palette = Colorgram.extract({width: canvas.width, height: canvas.height, data: id.data, channels: 4, canvas: canvas}, 4);
+					var palette = Colorgram.extract({width: canvas.width, height: canvas.height, data: id.data, channels: 4, canvas: canvas}, 6);
 
 					var backgroundColor = palette.shift();
 					var divider = 1.0 - backgroundColor[3];
@@ -545,12 +572,15 @@
 					var rates = [];
 					var i = 1;
 					palette.forEach(function(color) {
+						if (screenshotLock) {
+							return;
+						}
 					  //console.log(color);
 						var hex = rgbToHex( color[0], color[1], color[2] );
 						var rate = color[3] / divider;
 						var diff = colorDistance(fruitCrateColor, [ color[0], color[1], color[2] ]);
 						//console.log(diff);
-						if (diff > 69.0) {
+						if (diff > 180.0) {
 							rates.push(rate);
 						}
 						document.getElementById("color" + i).style.backgroundColor = hex;
@@ -560,16 +590,26 @@
 						document.getElementById("p-hex" + i).innerHTML = hex;
 						i += 1;
 					});
-					var prediction = ( rates.reduce(function(a, b) { return a + b; }, 0) * 100 ).toFixed(1);
-					var actual = ( (fruitSizeMultiplier * maxNumberOfFruits) / (1.4 * 120) * 100).toFixed(1);
-					var error = Math.abs(prediction - actual).toFixed(1);
-					if (previousPrediction) {
-						var diff = Math.abs(prediction - previousPrediction).toFixed(1);
-						$('#log-container').append($("<p>").html("Color Mapping: [ Prediction: " + prediction + "%, Actual: " + actual + "%, Error: " + error + "%, Diff: " + diff + "% ]"));
-					} else {
-						$('#log-container').append($("<p>").html("Color Mapping: [ Prediction: " + prediction + "%, Actual: " + actual + "%, Error: " + error + "% ]"));
+					var thisRate = ( rates.reduce(function(a, b) { return a + b; }, 0) * 100 );
+					console.log(thisRate);
+					var actual = ( (fruitSizeMultiplier * maxNumberOfFruits) / (fruitSizeMultiplier * maxNumberOfFruitsOnFullState) * 100).toFixed(1);
+					if (screenshotLock) {
+						return;
 					}
-					previousPrediction = prediction;
+					if (rateOnFullState == null) {
+						rateOnFullState = thisRate;
+						$('#log-container').append($("<p>").html("Color Mapping: Learned the full state (" + rateOnFullState.toFixed(1) + "% of the colors belongs to the fruit)"));
+					} else {
+						var prediction = (thisRate / rateOnFullState * 100).toFixed(1);
+						var error = Math.abs(prediction - actual).toFixed(1);
+						if (previousPrediction) {
+							var diff = Math.abs(prediction - previousPrediction).toFixed(1);
+							$('#log-container').append($("<p>").html("Color Mapping: [ Prediction: " + prediction + "%, Actual: " + actual + "%, Error: " + error + "%, Diff: " + diff + "% ]"));
+						} else {
+							$('#log-container').append($("<p>").html("Color Mapping: [ Prediction: " + prediction + "%, Actual: " + actual + "%, Error: " + error + "% ]"));
+						}
+						previousPrediction = prediction;
+					}
 				};
 			}
 
@@ -581,7 +621,7 @@
             d += (v1[i] - v2[i])*(v1[i] - v2[i]);
         }
         return Math.sqrt(d);
-    };
+    	};
 
 			function componentToHex(c) {
 		    var hex = c.toString(16);
@@ -598,18 +638,26 @@
 
 			// SLIDERS
 			function updateNumberOfFruitsSlider(slideValue) {
-				maxNumberOfFruits = slideValue;
 				previousPrediction = null;
-				$('#log-container').append($("<p>").html("Max Number of Fruits changed to " + slideValue));
+				maxNumberOfFruitsChosen = slideValue;
+				$('#log-container').append($("<p>").html("Max Number of Fruits changed to " + maxNumberOfFruitsChosen));
 			}
 
 			function updateFruitSize(slideValue) {
-				fruitSizeMultiplier = slideValue / 100;
+				stopSpawning = true;
+				rateOnFullState = null;
 				previousPrediction = null;
+				clearFruits();
+				fruitSizeMultiplier = slideValue / 100;
+				maxNumberOfFruitsOnFullState = (totalProduct / (fruitSizeMultiplier ** 3)).toFixed(0);
 				$('#log-container').append($("<p>").html("Fruit Size changed to " + fruitSizeMultiplier.toFixed(1)));
 			}
 
 			function updateTilt(slideValue) {
+				stopSpawning = true;
+				rateOnFullState = null;
+				previousPrediction = null;
+				clearFruits();
 				fruitCrateMesh.rotateZ( 1 * (slideValue - fruitCrateMeshCurrentTilt) * Math.PI / 180 );
 				console.log("Rotate");
 
@@ -626,12 +674,14 @@
 				fruitCrateMesh.userData.physicsBody.setCenterOfMassTransform(transform);
 
 				fruitCrateMeshCurrentTilt = slideValue;
-				previousPrediction = null;
 				$('#log-container').append($("<p>").html("Fruit Crate Angle changed to " + (slideValue - 90)));
 			}
 
 			function onViewAngleChange() {
+				stopSpawning = true;
+				rateOnFullState = null;
 				previousPrediction = null;
+				clearFruits();
 				$('#log-container').append($("<p>").html("Camera View Angle changed"));
 			}
 
