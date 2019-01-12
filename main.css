@@ -3,7 +3,6 @@
   height: 40px;
   border: 1px solid #fff;
   float: left;
-  visibility: hidden;
 }
 
 .color-palette-item > p {
@@ -11,7 +10,7 @@
   margin-block-end: 0.2em;
 }
 
-.color-palette {
+#color-palette {
   bottom: 0;
   position: fixed;
   z-index: 150;

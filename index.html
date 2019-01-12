@@ -36,27 +36,7 @@
 		<div id="log-container">
 		</div>
 
-		<div id="colors" class="color-palette">
-			<div id="color1" class="color-palette-item">
-				<p id="p-color1"></p>
-				<p id="p-hex1"></p>
-			</div>
-			<div id="color2" class="color-palette-item">
-				<p id="p-color2"></p>
-				<p id="p-hex2"></p>
-			</div>
-			<div id="color3" class="color-palette-item">
-				<p id="p-color3"></p>
-				<p id="p-hex3"></p>
-			</div>
-			<div id="color4" class="color-palette-item">
-				<p id="p-color4"></p>
-				<p id="p-hex4"></p>
-			</div>
-			<div id="color5" class="color-palette-item">
-				<p id="p-color5"></p>
-				<p id="p-hex5"></p>
-			</div>
+		<div id="color-palette">
 		</div>
 
 		<div id="settings-container">
@@ -88,8 +68,8 @@
 		<script src="js/QuickHull.js"></script>
 		<script src="js/geometries/ConvexGeometry.js"></script>
 
-		<script src="js/Vibrant.js"></script>
 		<script src="js/colorgram.js"></script>
+		<script src="js/deltaE.js"></script>
 
 		<script>
 			$('#log-container').append($("<p>").html("Loading..."));
@@ -564,13 +544,14 @@
 					var ctx = canvas.getContext('2d');
 					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 					var id = ctx.getImageData(0, 0, canvas.width, canvas.height);
-					var palette = Colorgram.extract({width: canvas.width, height: canvas.height, data: id.data, channels: 4, canvas: canvas}, 6);
+					var palette = Colorgram.extract({width: canvas.width, height: canvas.height, data: id.data, channels: 4, canvas: canvas}, 10);
 
 					var backgroundColor = palette.shift();
 					var divider = 1.0 - backgroundColor[3];
 
 					var rates = [];
 					var i = 1;
+					$("#color-palette").empty();
 					palette.forEach(function(color) {
 						if (screenshotLock) {
 							return;
@@ -578,16 +559,27 @@
 					  //console.log(color);
 						var hex = rgbToHex( color[0], color[1], color[2] );
 						var rate = color[3] / divider;
-						var diff = colorDistance(fruitCrateColor, [ color[0], color[1], color[2] ]);
-						//console.log(diff);
-						if (diff > 180.0) {
+						var color1 = rgb2lab(fruitCrateColor);
+						var color2 = rgb2lab([ color[0], color[1], color[2] ]);
+						var diff = deltaE(color1, color2);
+						console.log(diff);
+						if (diff > 16.0) {
 							rates.push(rate);
 						}
-						document.getElementById("color" + i).style.backgroundColor = hex;
-						document.getElementById("color" + i).style.width = (rate * 30) + 'vw';
-						document.getElementById("color" + i).style.visibility = 'visible';
-						document.getElementById("p-color" + i).innerHTML = (rate * 100).toFixed(1) + '%';
-						document.getElementById("p-hex" + i).innerHTML = hex;
+
+						var divColorPaletteItem = $("<div>");
+						divColorPaletteItem.addClass("color-palette-item");
+						divColorPaletteItem.css("background-color", hex);
+						divColorPaletteItem.css("width", (rate * 30) + 'vw');
+						if (rate > 0.06) {
+							var divpColor = $("<p>").html((rate * 100).toFixed(1) + '%');
+							divColorPaletteItem.append(divpColor);
+						}
+						if (rate > 0.09) {
+							var divpHex = $("<p>").html(hex);
+							divColorPaletteItem.append(divpHex);
+						}
+						$("#color-palette").append(divColorPaletteItem);
 						i += 1;
 					});
 					var thisRate = ( rates.reduce(function(a, b) { return a + b; }, 0) * 100 );
