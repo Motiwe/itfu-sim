@@ -46,6 +46,9 @@
 	  	<input class="range-slider" type="range" min="70" max="285" value="100" onchange="updateFruitSize(this.value)">
 			<p>Tilt:</p>
 	  	<input class="range-slider" type="range" min="0" max="180" value="90" onchange="updateTilt(this.value)">
+			<br>
+			<br>
+			<button onclick="takeSnapshot()">Take a Snapshot</button>
 		</div>
 
 		<div id="copyright">
@@ -100,7 +103,7 @@
 			var fruitCrateColor = [197, 197, 197];
 			var previousPrediction = null;
 			var rateOnFullState = null;
-			var screenshotLock = false;
+			var analyzeLock = false;
 			var stopSpawning = false;
 
 			if ( WEBGL.isWebGLAvailable() === false ) {
@@ -499,10 +502,10 @@
 					if (numberOfFruits < maxNumberOfFruits) {
 						setTimeout(spawnSphere, 20 * ((fruitSizeMultiplier / fruitSizeMultiplierOriginal) ** 3));
 					} else {
-						screenshotLock = false;
+						analyzeLock = false;
 
 						setTimeout(function() {
-							takeScreenshot();
+							analyze();
 						}, 3000);
 
 						setTimeout(function() {
@@ -514,7 +517,7 @@
 			}
 
 			function clearFruits() {
-				screenshotLock = true;
+				analyzeLock = true;
 				rigidBodies.forEach(function(element) {
 					scene.remove(element);
 					physicsWorld.removeRigidBody(element.userData.physicsBody);
@@ -530,7 +533,7 @@
 			  return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
 			}
 
-			function takeScreenshot() {
+			function analyze() {
 		    var img = new Image();
 		    // Without 'preserveDrawingBuffer' set to true, we must render now
 		    renderer.render(scene, camera);
@@ -553,7 +556,7 @@
 					var i = 1;
 					$("#color-palette").empty();
 					palette.forEach(function(color) {
-						if (screenshotLock) {
+						if (analyzeLock) {
 							return;
 						}
 					  //console.log(color);
@@ -562,7 +565,7 @@
 						var color1 = rgb2lab(fruitCrateColor);
 						var color2 = rgb2lab([ color[0], color[1], color[2] ]);
 						var diff = deltaE(color1, color2);
-						console.log(diff);
+						//console.log(diff);
 						if (diff > 16.0) {
 							rates.push(rate);
 						}
@@ -585,7 +588,7 @@
 					var thisRate = ( rates.reduce(function(a, b) { return a + b; }, 0) * 100 );
 					console.log(thisRate);
 					var actual = ( (fruitSizeMultiplier * maxNumberOfFruits) / (fruitSizeMultiplier * maxNumberOfFruitsOnFullState) * 100).toFixed(1);
-					if (screenshotLock) {
+					if (analyzeLock) {
 						return;
 					}
 					if (rateOnFullState == null) {
@@ -623,10 +626,6 @@
 			function rgbToHex(r, g, b) {
 		    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 			}
-			//var a = document.createElement('a');
-			//a.href = img.src.replace("image/png", "image/octet-stream");
-			//a.download = 'small-fruits.png'
-			//a.click();
 
 			// SLIDERS
 			function updateNumberOfFruitsSlider(slideValue) {
@@ -675,6 +674,17 @@
 				previousPrediction = null;
 				clearFruits();
 				$('#log-container').append($("<p>").html("Camera View Angle changed"));
+			}
+
+			function takeSnapshot() {
+		    var img = new Image();
+		    // Without 'preserveDrawingBuffer' set to true, we must render now
+		    renderer.render(scene, camera);
+		    img.src = renderer.domElement.toDataURL();
+				var a = document.createElement('a');
+				a.href = img.src.replace("image/png", "image/octet-stream");
+				a.download = 'canvas-' + new Date().valueOf() + '.png'
+				a.click();
 			}
 
 		</script>
