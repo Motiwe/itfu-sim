@@ -18,12 +18,17 @@
 }
 
 #settings-container {
+  width: 18vw;
   bottom: 0;
   right: 0;
   position: fixed;
   z-index: 150;
-  margin-right: 20px;
-  margin-bottom: 20px;
+  margin-right: 1vw;
+}
+
+#settings-container > button {
+  max-width: 18vw;
+  margin-bottom: 10px;
 }
 
 #log-container {
@@ -65,4 +70,15 @@ a:active {
   bottom: 0px;
   width: 100%;
   padding: 5px;
+}
+
+p#note {
+  font-style: italic;
+  font-size: 0.6rem;
+}
+
+@media screen and (max-width: 800px) {
+    p#note {
+        display: none !important;
+    }
 }
