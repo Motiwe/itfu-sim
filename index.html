@@ -453,7 +453,10 @@
 
 					var cubeWidth = 800;
 					var numberOfSphersPerSide = 8;
-					var sphereRadius = ( cubeWidth / numberOfSphersPerSide ) * fruitSizeMultiplier * 0.5;
+					var fruitSizeMultiplierUpper = fruitSizeMultiplier + 0.2;
+					var fruitSizeMultiplierLower = fruitSizeMultiplier - 0.2;
+					var sphereRadius = 50 * (Math.random() * (fruitSizeMultiplierLower - fruitSizeMultiplierUpper) + fruitSizeMultiplierUpper);
+					console.log(sphereRadius);
 					var stepSize = 0.125;
 
 					var geometry = new THREE.SphereBufferGeometry( sphereRadius, 32, 16 );
@@ -601,9 +604,9 @@
 			}
 
 			function updateFruitSize(slideValue) {
-				fruitSizeMultiplier = slideValue / 140;
+				fruitSizeMultiplier = slideValue / 100;
 				previousPrediction = null;
-				$('#log-container').append($("<p>").html("Fruit Size changed to " + (slideValue / 140).toFixed(1)));
+				$('#log-container').append($("<p>").html("Fruit Size changed to " + fruitSizeMultiplier.toFixed(1)));
 			}
 
 			function updateTilt(slideValue) {
