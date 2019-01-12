@@ -421,6 +421,11 @@
 			}
 
 			function spawnSphere() {
+				if (document.hidden == true) {
+					setTimeout(spawnSphere, 20 * fruitSizeMultiplier / originalFruitSizeMultiplier);
+					return;
+				}
+
 				var genCubeUrls = function ( prefix, postfix ) {
 
 					return [
