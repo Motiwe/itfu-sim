@@ -104,7 +104,6 @@
 			var fruitCrateColor = [197, 197, 197];
 			var previousPrediction = null;
 			var rateOnFullState = null;
-			var analyzeLock = false;
 			var stopSpawning = false;
 
 			if ( WEBGL.isWebGLAvailable() === false ) {
@@ -417,7 +416,6 @@
 				}
 
 				if (stopSpawning) {
-					stopSpawning = false;
 					return;
 				}
 
@@ -488,7 +486,6 @@
 					mesh.position.z = getRandomInt(-300, 300);
 
 					if (stopSpawning) {
-						stopSpawning = false;
 						return;
 					}
 					var sphereBody = createRigidBody(mesh, sphereShape, sphereMass);
@@ -503,8 +500,6 @@
 					if (numberOfFruits < maxNumberOfFruits) {
 						setTimeout(spawnSphere, 20 * ((fruitSizeMultiplier / fruitSizeMultiplierOriginal) ** 3));
 					} else {
-						analyzeLock = false;
-
 						setTimeout(function() {
 							analyze();
 						}, 3000);
@@ -518,14 +513,21 @@
 			}
 
 			function clearFruits() {
-				analyzeLock = true;
-				rigidBodies.forEach(function(element) {
-					scene.remove(element);
-					physicsWorld.removeRigidBody(element.userData.physicsBody);
-				});
-				numberOfFruits = 0;
-				document.getElementById("number-fruits").innerHTML = numberOfFruits;
-				setTimeout(spawnSphere, 1000);
+				if (stopSpawning == false) {
+					stopSpawning = true;
+					rigidBodies.forEach(function(element) {
+						scene.remove(element);
+						physicsWorld.removeRigidBody(element.userData.physicsBody);
+					});
+					numberOfFruits = 0;
+					document.getElementById("number-fruits").innerHTML = numberOfFruits;
+					setTimeout(clearLock, 500);
+					setTimeout(spawnSphere, 1000);
+				}
+			}
+
+			function clearLock() {
+				stopSpawning = false;
 			}
 
 			function getRandomInt(min, max) {
@@ -557,7 +559,7 @@
 					var i = 1;
 					$("#color-palette").empty();
 					palette.forEach(function(color) {
-						if (analyzeLock) {
+						if (stopSpawning) {
 							return;
 						}
 					  //console.log(color);
@@ -589,7 +591,7 @@
 					var thisRate = ( rates.reduce(function(a, b) { return a + b; }, 0) * 100 );
 					console.log(thisRate);
 					var actual = ( (fruitSizeMultiplier * maxNumberOfFruits) / (fruitSizeMultiplier * maxNumberOfFruitsOnFullState) * 100).toFixed(1);
-					if (analyzeLock) {
+					if (stopSpawning) {
 						return;
 					}
 					if (rateOnFullState == null) {
@@ -636,7 +638,6 @@
 			}
 
 			function updateFruitSize(slideValue) {
-				stopSpawning = true;
 				rateOnFullState = null;
 				previousPrediction = null;
 				clearFruits();
@@ -646,7 +647,6 @@
 			}
 
 			function updateTilt(slideValue) {
-				stopSpawning = true;
 				rateOnFullState = null;
 				previousPrediction = null;
 				clearFruits();
@@ -670,7 +670,6 @@
 			}
 
 			function onViewAngleChange() {
-				stopSpawning = true;
 				rateOnFullState = null;
 				previousPrediction = null;
 				clearFruits();
